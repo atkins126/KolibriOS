@@ -25,6 +25,11 @@ if not exist "%Bin%\convert.bat" (
   if errorlevel 1 goto exit
 )
 
+if not exist "%Bin%\convert-all.bat" (
+  copy "%~dp0convert-all.bat" "%Bin%"
+  if errorlevel 1 goto exit
+)
+
 dcc32 %Source%.dpr -e"%Bin%" -n"%DCU%" -u"%Units%" %Options%
 if errorlevel 1 goto exit
 
