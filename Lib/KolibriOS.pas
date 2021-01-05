@@ -531,8 +531,8 @@ const
 {62.8}    function WritePCIByte(Bus, Device, Func, Reg: Byte; Data: Byte): LongWord; stdcall;
 {62.9}    function WritePCIWord(Bus, Device, Func, Reg: Byte; Data: Word): LongWord; stdcall;
 {62.10}   function WritePCILongWord(Bus, Device, Func, Reg: Byte; Data: LongWord): LongWord; stdcall;
-{63.1}    procedure DebugWrite(Data: Byte); stdcall;
-{63.2}    function DebugRead(var Data: Byte): LongWord; stdcall;
+{63.1}    procedure DebugWrite(Data: KolibriChar); stdcall;
+{63.2}    function DebugRead(var Data: KolibriChar): Boolean; stdcall;
 {64}      function ReallocAppMemory(Count: LongWord): LongInt; stdcall;
 {65}      procedure DrawImageEx(const Image; Left, Top: LongInt; Width, Height, BPP: LongWord; Palette: Pointer; Padding: LongWord); stdcall;
 {66.1}    procedure SetKeyboardInputMode(Mode: LongWord); stdcall;
@@ -2326,7 +2326,7 @@ asm
         pop    ebx
 end;
 
-procedure DebugWrite(Data: Byte); stdcall;
+procedure DebugWrite(Data: KolibriChar); stdcall;
 asm
         push   ebx
         mov    eax, 63
@@ -2336,7 +2336,7 @@ asm
         pop    ebx
 end;
 
-function DebugRead(var Data: Byte): LongWord; stdcall;
+function DebugRead(var Data: KolibriChar): Boolean; stdcall;
 asm
         push   ebx
         mov    eax, 63
@@ -2346,6 +2346,8 @@ asm
         mov    [ecx], al
         mov    eax, ebx
         pop    ebx
+        cmp    al, 1 // kernel bug workaround
+        sete   al
 end;
 
 function ReallocAppMemory(Count: LongWord): LongInt; stdcall;
