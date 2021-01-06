@@ -245,15 +245,36 @@ type
 const
   INVALID_HANDLE = 0;
 
+  // File system error codes
+  ERROR_SUCCESS                     = 0;
+  ERROR_FUNCTION_IS_NOT_SUPPORTED   = 2;
+  ERROR_UNKNOWN_FILE_SYSTEM         = 3;
+  ERROR_FILE_NOT_FOUND              = 5;
+  ERROR_END_OF_FILE                 = 6;
+  ERROR_INVALID_POINTER             = 7;
+  ERROR_DISK_FULL                   = 8;
+  ERROR_FILE_SYSTEM_ERROR           = 9;
+  ERROR_ACCESS_DENIED               = 10;
+  ERROR_DEVICE_ERROR                = 11;
+  ERROR_NO_MEMORY_FOR_FILE_SYSTEM   = 12;
+
+  // Application start functions error codes
+  ERROR_NOT_ENOUGH_MEMORY           = 30;
+  ERROR_FILE_IS_NOT_EXECUTABLE      = 31;
+  ERROR_TOO_MANY_PROCESSES          = 32;
+
+  WINDOW_BORDER_SIZE = 5; // defined by kernel
+
   // Window styles 
-  WS_SKINNED_FIXED     =  $4000000;
-  WS_SKINNED_SIZABLE   =  $3000000;
-  WS_FIXED             =  $0000000;
-  WS_SIZABLE           =  $2000000;
+  WS_FIXED             = $00000000;
+  WS_NO_DRAW           = $01000000;
+  WS_SIZABLE           = $02000000;
+  WS_SKINNED_SIZABLE   = $03000000;
+  WS_SKINNED_FIXED     = $04000000;
+  WS_CAPTION           = $10000000;
+  WS_CLIENT_COORDS     = $20000000;
   WS_TRANSPARENT_FILL  = $40000000;
   WS_GRADIENT_FILL     = $80000000;
-  WS_CLIENT_COORDS     = $20000000;
-  WS_CAPTION           = $10000000;
 
   // Caption styles 
   CAPTION_MOVABLE      = $00000000;
@@ -306,27 +327,27 @@ const
   BS_TRANSPARENT_FILL  = $40000000;
   BS_NO_FRAME          = $20000000;
 
-  // OpenSharedMemory open\access flags
+  // Blit flags
+  BLIT_CLIENT_RELATIVE = $20000000;
+
+  // OpenSharedMemory open/access flags
   SHM_OPEN             = $00;
   SHM_OPEN_ALWAYS      = $04;
   SHM_CREATE           = $08;
   SHM_READ             = $00;
   SHM_WRITE            = $01;
 
-  // KeyboardLayout flags 
+  // KeyboardLayout flags
   KBL_NORMAL           = 1;
   KBL_SHIFT            = 2;
   KBL_ALT              = 3;
 
-  // SystemShutdown parameters 
+  // SystemShutdown parameters
   SHUTDOWN_TURNOFF     = 2;
   SHUTDOWN_REBOOT      = 3;
   SHUTDOWN_RESTART     = 4;
 
-  // Blit flags 
-  BLIT_CLIENT_RELATIVE = $20000000;
-
-{-1}      procedure TerminateThread; stdcall;
+{-1}      procedure ExitThread; stdcall;
 {0}       procedure DrawWindow(Left, Top, Width, Height: LongInt; Caption: PKolibriChar; BackColor, Style, CapStyle: LongWord); stdcall;
 {1}       procedure SetPixel(X, Y: LongInt; Color: LongWord); stdcall;
 {2}       function GetKey: TKeyboardInput; stdcall;
@@ -510,8 +531,8 @@ const
 {62.8}    function WritePCIByte(Bus, Device, Func, Reg: Byte; Data: Byte): LongWord; stdcall;
 {62.9}    function WritePCIWord(Bus, Device, Func, Reg: Byte; Data: Word): LongWord; stdcall;
 {62.10}   function WritePCILongWord(Bus, Device, Func, Reg: Byte; Data: LongWord): LongWord; stdcall;
-{63.1}    procedure DebugWrite(Data: Byte); stdcall;
-{63.2}    function DebugRead(var Data: Byte): LongWord; stdcall;
+{63.1}    procedure DebugWrite(Data: KolibriChar); stdcall;
+{63.2}    function DebugRead(var Data: KolibriChar): Boolean; stdcall;
 {64}      function ReallocAppMemory(Count: LongWord): LongInt; stdcall;
 {65}      procedure DrawImageEx(const Image; Left, Top: LongInt; Width, Height, BPP: LongWord; Palette: Pointer; Padding: LongWord); stdcall;
 {66.1}    procedure SetKeyboardInputMode(Mode: LongWord); stdcall;
@@ -635,9 +656,9 @@ const
 
 implementation
 
-procedure TerminateThread; stdcall;
+procedure ExitThread; stdcall;
 asm
-        mov    eax, $FFFFFFFF
+        or     eax, -1
         int    $40
 end;
 
@@ -2305,7 +2326,7 @@ asm
         pop    ebx
 end;
 
-procedure DebugWrite(Data: Byte); stdcall;
+procedure DebugWrite(Data: KolibriChar); stdcall;
 asm
         push   ebx
         mov    eax, 63
@@ -2315,7 +2336,7 @@ asm
         pop    ebx
 end;
 
-function DebugRead(var Data: Byte): LongWord; stdcall;
+function DebugRead(var Data: KolibriChar): Boolean; stdcall;
 asm
         push   ebx
         mov    eax, 63
@@ -2325,6 +2346,8 @@ asm
         mov    [ecx], al
         mov    eax, ebx
         pop    ebx
+        cmp    al, 1 // kernel bug workaround
+        sete   al
 end;
 
 function ReallocAppMemory(Count: LongWord): LongInt; stdcall;

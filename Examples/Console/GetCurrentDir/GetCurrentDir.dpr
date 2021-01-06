@@ -3,10 +3,7 @@ program GetCurrentDir;
 uses
   KolibriOS, CRT;
 
-const
-  AppPath = PPKolibriChar(32);
-  CmdLine = PPKolibriChar(28);
-
+const  
   BUFFER_SIZE = 256;
 
 var
@@ -17,7 +14,7 @@ begin
 
   GetCurrentDirectory(Buffer, BUFFER_SIZE);
 
-  WriteLnEx('AppPath is "%s"', [AppPath^]);
-  WriteLnEx('CmdLine is "%s"', [CmdLine^]);
-  WriteLnEx('Current Directory is "%s"', [Buffer]);
+  con_printf('Application Path is "%s"'#10, AppPath);
+  con_printf('Command Line is "%s"'#10, CmdLine);
+  con_printf('Current Directory is "%s"'#10, Buffer);
 end.
